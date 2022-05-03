@@ -1,0 +1,236 @@
+<?xml version="1.0"?>
+<robot name="mbot" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:arg name="laser_visual" default="false"/>
+  <xacro:arg name="imu_visual"   default="false"/>
+  <xacro:arg name="sonar_visual"   default="false"/>
+  <xacro:arg name="linecam_visual"   default="true"/>
+
+  <xacro:property name="deg2rad" value="0.017460317"/>
+  <xacro:property name="scan_angle" value="1"/>
+
+
+
+  <gazebo reference="chassis_link">
+    <material>Gazebo/Orange</material>
+  </gazebo>
+
+
+  <gazebo reference="left_wheel_link">
+    <mu1>0.8</mu1>
+    <mu2>0.8</mu2>
+    <kp>500000.0</kp>
+    <kd>1.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>0.5</maxVel>
+    <material>Gazebo/FlatBlack</material>
+  </gazebo>
+
+
+  <gazebo reference="right_wheel_link">
+    <mu1>0.8</mu1>
+    <mu2>0.8</mu2>
+    <kp>500000.0</kp>
+    <kd>1.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>0.5</maxVel>
+    <material>Gazebo/FlatBlack</material>
+  </gazebo>
+
+
+  <gazebo reference="caster_wheel_link">
+    <mu1>0.1</mu1>
+    <mu2>0.1</mu2>
+    <!-- <kp>50000.0</kp>
+    <kd>1.0</kd> -->
+    <minDepth>0.001</minDepth>
+    <maxVel>1.0</maxVel>
+    <material>Gazebo/FlatBlack</material>
+  </gazebo>
+
+  
+
+
+
+  <gazebo>
+    <plugin name="diff_drive_plugin" filename="libgazebo_ros_diff_drive.so">
+      <commandTopic>cmd_vel</commandTopic>
+      <odometryTopic>odom</odometryTopic>
+      <odometryFrame>odom</odometryFrame>
+      <odometrySource>world</odometrySource>
+      <publishOdomTF>true</publishOdomTF>
+      <robotBaseFrame>base_link</robotBaseFrame>
+      <publishWheelTF>false</publishWheelTF>
+      <publishTf>true</publishTf>
+      <publishWheelJointState>true</publishWheelJointState>
+      <legacyMode>false</legacyMode>
+      <updateRate>50</updateRate>
+      <leftJoint>left_wheel_joint</leftJoint>
+      <rightJoint>right_wheel_joint</rightJoint>
+      <wheelSeparation>0.3</wheelSeparation>
+      <wheelDiameter>0.1</wheelDiameter>
+      <wheelAcceleration>1</wheelAcceleration>
+      <wheelTorque>10</wheelTorque>
+      <rosDebugLevel>na</rosDebugLevel>
+    </plugin>
+  </gazebo>
+
+
+
+
+  <gazebo reference="lidar_link">
+    <material>Gazebo/DarkGrey</material>
+    <sensor type="ray" name="lidar">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>$(arg laser_visual)</visualize>
+      <update_rate>20</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>720</samples>
+            <resolution>1</resolution>
+            <min_angle>0.0</min_angle>
+            <max_angle>${2*pi}</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.120</min>
+          <max>3.5</max>
+          <resolution>0.015</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+      <plugin name="lidar_plugin" filename="libgazebo_ros_laser.so">
+        <topicName>lidar_scan</topicName>
+        <frameName>lidar_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+
+
+  <gazebo reference="sonar_link">
+    <material>Gazebo/Blue</material>
+    <sensor type="ray" name="sonar">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>$(arg sonar_visual)</visualize>
+      <update_rate>20</update_rate>
+      <ray>
+         <scan>
+            <horizontal>
+               <samples>20</samples>
+               <resolution>1</resolution> 
+               <min_angle>${-scan_angle * deg2rad}</min_angle>
+               <max_angle>${scan_angle * deg2rad}</max_angle>
+            </horizontal>
+            <vertical>
+               <samples>20</samples>
+               <resolution>1</resolution> 
+               <min_angle>${-scan_angle * deg2rad}</min_angle>
+               <max_angle>${scan_angle * deg2rad}</max_angle>
+            </vertical>
+         </scan>
+         <range>
+            <min>0.01</min>
+            <max>2</max>
+            <resolution>0.02</resolution>
+         </range>
+      </ray>
+      <plugin filename="libgazebo_ros_range.so" name="sonar_plugin">
+         <gaussianNoise>0.005</gaussianNoise>
+         <alwaysOn>true</alwaysOn>
+         <updateRate>20</updateRate>
+         <topicName>sonar_scan</topicName>
+         <frameName>sonar_link</frameName>
+         <radiation>INFRARED</radiation>
+         <fov>0.2967</fov>
+      </plugin>
+   </sensor>
+  </gazebo> 
+
+
+
+<gazebo reference="linecam_link">
+    <material>Gazebo/DarkGrey</material>
+    <sensor type="camera" name="camera">
+    <visualize>$(arg linecam_visual)</visualize>
+      <update_rate>20.0</update_rate>
+      <camera name="linecam">
+        <!-- <horizontal_fov>1.3962634</horizontal_fov> -->
+        <horizontal_fov>1.10</horizontal_fov>
+        <image>
+          <width>320</width>
+          <height>240</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>0.4</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.007</stddev>
+        </noise>
+      </camera>
+      <plugin name="camera_plugin" filename="libgazebo_ros_camera.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>20</updateRate>
+        <cameraName>linecam</cameraName>
+        <imageTopicName>linecam_raw</imageTopicName>
+        <cameraInfoTopicName>linecam_info</cameraInfoTopicName>
+        <frameName>linecam_link</frameName>
+        <hackBaseline>0.07</hackBaseline>
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+
+
+  <gazebo reference="imu_link">
+    <sensor type="imu" name="imu">
+      <always_on>true</always_on>
+      <visualize>$(arg imu_visual)</visualize>
+    </sensor>
+    <material>Gazebo/SkyBlue</material>
+  </gazebo>
+
+  <gazebo>
+    <plugin name="imu_plugin" filename="libgazebo_ros_imu.so">
+      <alwaysOn>true</alwaysOn>
+      <bodyName>imu_link</bodyName>
+      <frameName>imu_link</frameName>
+      <topicName>imu_reading</topicName>
+      <serviceName>imu_service</serviceName>
+      <gaussianNoise>0.0</gaussianNoise>
+      <updateRate>20</updateRate>
+      <imu>
+        <noise>
+          <type>gaussian</type>
+          <rate>
+            <mean>0.0</mean>
+            <stddev>2e-4</stddev>
+            <bias_mean>0.0000075</bias_mean>
+            <bias_stddev>0.0000008</bias_stddev>
+          </rate>
+          <accel>
+            <mean>0.0</mean>
+            <stddev>1.7e-2</stddev>
+            <bias_mean>0.1</bias_mean>
+            <bias_stddev>0.001</bias_stddev>
+          </accel>
+        </noise>
+      </imu>
+    </plugin>
+  </gazebo>
+
+   
+</robot>

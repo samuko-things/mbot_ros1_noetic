@@ -1,0 +1,5 @@
+
+ <launch>
+    <node name="hsv_color_filter" pkg="mbot_linecam" type="hsv_color_filter.py" output="screen"/>
+    <node name="hsv_trackbar" pkg="mbot_linecam" type="hsv_trackbar.py" output="screen"/>  
+</launch>
