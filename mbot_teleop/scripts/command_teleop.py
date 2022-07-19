@@ -2,12 +2,12 @@ import rospy
 from geometry_msgs.msg import Twist
 
 
+lin_vel = 0.3
+ang_vel = 0.6
+
 
 pub_cmd = rospy.Publisher("/cmd_vel", Twist, queue_size=100) # define the publisher object (topic, message_type, queue_size)
 cmd_type = ['s', 'f', 'b', 'l', 'r', 'd', 'set']
-
-lin_vel = 0.3
-ang_vel = 0.6
 
 
 def drive_robot(v, w):

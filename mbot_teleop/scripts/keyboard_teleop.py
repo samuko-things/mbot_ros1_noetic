@@ -1,118 +1,71 @@
 import rospy
+from std_msgs.msg import Int8MultiArray
 from geometry_msgs.msg import Twist
-from pynput.keyboard import Key, KeyCode, Listener
 
 
 
 
+speed_command = 0
+move_command = 0
+direction_command = 0
+
+def get_motion_cmd(cmd):
+    global speed_command, move_command, direction_command
+
+    motion_cmd = cmd.data
+
+    speed_command = motion_cmd[0]
+    move_command = motion_cmd[1]
+    direction_command= motion_cmd[2]
+     
+rospy.Subscriber("/pynput_cmd", Int8MultiArray, get_motion_cmd)
+
+
+def compute_vel_from_cmd(speed_cmd, move_cmd, direction_cmd):
+    lin_vel = 0.6
+    ang_vel = 1.0
+
+    v = lin_vel*move_cmd
+    w = ang_vel*direction_cmd
+
+    return v, w
+
+
+
+# pub_cmd = rospy.Publisher("/turtle1/cmd_vel", Twist, queue_size=100)      # for turtlesim simulation drive
 pub_cmd = rospy.Publisher("/cmd_vel", Twist, queue_size=100)
 
-in_motion = False
-
-lin_vel = 0.3
-ang_vel = 0.6
-
-
 def drive_robot(v, w):
+    global pub_cmd
+
     cmd = Twist()
     cmd.linear.x = v
     cmd.angular.z = w
 
-    rospy.loginfo(f"v = {cmd.linear.x}, w = {cmd.angular.z}")
+    # rospy.loginfo(f"v = {cmd.linear.x}, w = {cmd.angular.z}")
     pub_cmd.publish(cmd)
 
 
 
 
 
-   
-def Stop():
-    drive_robot(0,0)
-
-def forward():
-    global lin_vel
-    drive_robot(lin_vel, 0)
-
-def backward():
-    global lin_vel
-    drive_robot(-1*lin_vel,0)
-
-def left_turn():
-    global ang_vel
-    drive_robot(0,ang_vel)
-
-def right_turn():
-    global ang_vel
-    drive_robot(0,-1*ang_vel)
-
-
-
-
-def press(key):
-    
-    global in_motion
-    
-    if key == Key.up:
-        if not in_motion:
-            in_motion = True
-            forward()    
-
-    elif key == Key.down:
-        if not in_motion:
-            in_motion = True
-            backward() 
-
-    elif key == Key.left:
-        if not in_motion:
-            in_motion = True
-            left_turn() 
-
-    elif key == Key.right:
-        if not in_motion:
-            in_motion = True
-            right_turn() 
-   
-
-
-def release(key):
-    global in_motion
-
-    if key == Key.up:
-        in_motion= False
-        Stop()
-        
-    elif key == Key.down:
-        in_motion= False
-        Stop()
-
-    elif key == Key.left:
-        in_motion= False
-        Stop()
-
-    elif key == Key.right:
-        in_motion= False
-        Stop()
-
-    elif key == Key.esc:
-        # Stop listener
-        Stop()
-        return False
-
-
-
-
 def main():
-    rospy.init_node("keyboard_teleop", anonymous=False) #initialize and startup the ros node
-    Stop()
-    rospy.loginfo("use direction keays to control the robot")
+    global speed_command, move_command, direction_command
 
-    # ...or, in a non-blocking fashion:
-    listener = Listener(on_press=press, on_release=release)
-    listener.start()
-    listener.join()
+    rospy.init_node("keyboard_teleop", anonymous=False) #initialize and startup the ros node
+    drive_robot(0,0)
+    rospy.loginfo("use direction keys to control the robot")
+
+    while not rospy.is_shutdown():
+        try:
+                v,w = compute_vel_from_cmd(speed_command, move_command, direction_command)
+                drive_robot(v,w)
+
+        except Exception as e:
+            print(e)
+
 
 
 if __name__=="__main__":
     main()
-
-    
+rospy.spin()
